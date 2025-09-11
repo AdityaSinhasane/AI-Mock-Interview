@@ -31,6 +31,7 @@ function App() {
       {/* protected routes */}
       <Route element={<ProtectedRoutes> <MainLayout/> </ProtectedRoutes>}>
         {/*add all the protected routes */}
+        
       </Route>
     </Routes>
    </Router>
