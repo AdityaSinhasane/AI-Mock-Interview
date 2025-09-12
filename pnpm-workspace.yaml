@@ -1,4 +1,6 @@
 ignoredBuiltDependencies:
   - '@clerk/shared'
+  - '@firebase/util'
   - '@tailwindcss/oxide'
   - esbuild
+  - protobufjs
