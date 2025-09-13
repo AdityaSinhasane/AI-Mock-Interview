@@ -137,7 +137,8 @@ const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
             questions: aiResult,
             ...data,
             updatedAt: serverTimestamp()
-          })
+          });
+
           toast(toastMessage.title, {description: toastMessage.description})
 
         }
