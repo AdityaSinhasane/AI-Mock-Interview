@@ -21,6 +21,9 @@ import {
 } from "./ui/form";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import { chatSession } from "@/scripts";
+import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { db } from "@/config/firebase.config";
 
 interface FormMockInterviewProps {
   initialData: Interview | null;
@@ -69,10 +72,97 @@ const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
     ? { title: "Updated..!", description: "Changes saved successfully..." }
     : { title: "Created..!", description: "New Mock Interview created..." };
 
+
+  const cleanAiResponse = (responseText: string) =>{
+    // step 1 :: Trim any surrounding whitespaces
+    let cleanText = responseText.trim();
+
+    // step 2 :: remove any occurence of "json" or code block symbol (```or`)
+    cleanText = cleanText.replace(/(json|```|`)/g, "");
+
+    //step 3 :: Extract a JOSN array by capturing text between square brackets
+    const jsonArrayMatch = cleanText.match(/\[.*\]/s);
+
+    if(jsonArrayMatch){
+      cleanText = jsonArrayMatch[0];
+    }else
+    {
+      throw new Error("No JSON array found in response");
+    }
+
+    // step 4 :: Parse the clean JSON text into an array of objects
+    try {
+      return JSON.parse(cleanText);
+    } catch (error) {
+      throw new Error("Invalid JSON format: " + (error as Error)?.message )
+    }
+  }
+
+
+  const generateAiResponse = async (data: FormData) =>{
+    const prompt = `
+      As an experienced prompt engineer, generate a JSON array containing 5 technical interview questions along with detailed answers based on the following job information. Each object in the array should have the fields "question" and "answer", formatted as follows:
+
+      [
+        { "question": "<Question text>", "answer": "<Answer text>" },
+        ...
+      ]
+
+      Job Information:
+      - Job Position: ${data?.position}
+      - Job Description: ${data?.description}
+      - Years of Experience Required: ${data?.experience}
+      - Tech Stacks: ${data?.techStack}
+
+      The questions should assess skills in ${data?.techStack} development and best practices, problem-solving, and experience handling complex requirements. Please format the output strictly as an array of JSON objects without any additional labels, code blocks, or explanations. Return only the JSON array with questions and answers.
+      `;
+    
+    const aiResults = await chatSession.sendMessage(prompt);
+    const cleanedResponse = cleanAiResponse(aiResults.response.text());
+
+    return cleanedResponse;
+
+    
+  }
+
   const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
-      console.log(data);
+      
+      if(initialData){
+        //update
+        if(isValid){
+          const aiResult = await generateAiResponse(data);
+          await updateDoc(doc(db, "interviews", initialData?.id),{
+            questions: aiResult,
+            ...data,
+            updatedAt: serverTimestamp()
+          })
+          toast(toastMessage.title, {description: toastMessage.description})
+
+        }
+
+      }else{
+
+        // create a new mock interview
+        if(isValid){
+          const aiResult = await generateAiResponse(data);
+
+          await addDoc(collection(db, "interviews"), {
+            ...data,
+            userId,
+            questions: aiResult,
+            createdAt: serverTimestamp(),
+
+          });
+
+          toast(toastMessage.title, {description: toastMessage.description})
+
+        }
+      }
+
+      navigate("/generate", { replace: true});
+
     } catch (error) {
       console.log(error);
       toast.error("Error..", {
