@@ -11,6 +11,8 @@ import MainLayout from "@/layouts/main-layout"
 import Generate from "@/components/generate"
 import Dashboard from "@/routes/dashboard"
 import CreateEditPage from "@/routes/create-edit-page"
+import MockLoadPage from "@/routes/mock-load-page"
+import MockInterviewPage from "@/routes/mock-interview-page"
 
 
 function App() {
@@ -37,6 +39,8 @@ function App() {
         <Route element={<Generate/>} path="/generate">
           <Route index element={<Dashboard/>}/>
           <Route path=":interviewId" element={<CreateEditPage/>}/>
+          <Route path="interview/:interviewId" element={<MockLoadPage/>}/>
+          <Route path="interview/:interviewId/start" element={<MockInterviewPage/>}/>
         </Route>
         
       </Route>
