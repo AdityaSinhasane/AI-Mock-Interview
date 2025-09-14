@@ -7,6 +7,9 @@ import Webcam from "react-webcam";
 import { TooltipButton } from "./tooltip-button";
 import { toast } from "sonner";
 import { chatSession } from "@/scripts";
+import { SaveModal } from "./save-model";
+import { addDoc, collection, getDocs, query, serverTimestamp, where } from "firebase/firestore";
+import { db } from "@/config/firebase.config";
 
 interface RecordAnswerProps {
   question: { question: string; answer: string };
@@ -123,6 +126,61 @@ const RecordAnswer = ({question, isWebCam, setIsWebCam}: RecordAnswerProps) => {
         startSpeechToText();
     }
 
+    const saveUserAnswer = async () => {
+        setLoading(true);
+
+        if (!aiResult) {
+         return;
+        }
+
+        const currentQuestion = question.question;
+        try {
+            // query the firbase to check if the user answer already exists for this question
+
+            const userAnswerQuery = query(
+                collection(db, "userAnswers"),
+                where("userId", "==", userId),
+                where("question", "==", currentQuestion)
+            );
+
+            const querySnap = await getDocs(userAnswerQuery);
+
+            // if the user already answerd the question dont save it again
+            if (!querySnap.empty) {
+                    console.log("Query Snap Size", querySnap.size);
+                    toast.info("Already Answered", {
+                        description: "You have already answered this question",
+                    });
+                    return;
+                } else {
+                // save the user answer
+                    await addDoc(collection(db, "userAnswers"), {
+                        mockIdRef: interviewId,
+                        question: question.question,
+                        correct_ans: question.answer,
+                        user_ans: userAnswer,
+                        feedback: aiResult.feedback,
+                        rating: aiResult.ratings,
+                        userId,
+                        createdAt: serverTimestamp(),
+                    });
+
+                    toast("Saved", { description: "Your answer has been saved.." });
+                }
+
+                setUserAnswer("");
+                stopSpeechToText();
+        }catch (error) {
+            toast("Error", {
+                description: "An error occurred while generating feedback.",
+            });
+            console.log(error);
+        } finally {
+            setLoading(false);
+            setOpen(!open);
+        }
+    };
+
     useEffect(()=>{
         const combineTranscripts = results.filter((result): result is ResultType => typeof result !== "string").map(result => result.transcript).join(" ");
         setUserAnswer(combineTranscripts);
@@ -130,7 +188,15 @@ const RecordAnswer = ({question, isWebCam, setIsWebCam}: RecordAnswerProps) => {
 
     return (
     <div className="w-full flex flex-col items-center gap-8 mt-4">
-      {/*save model */}
+        {/*save model */}
+        <SaveModal
+            isOpen={open}
+            onClose={()=> setOpen(false)}
+            onConfirm={saveUserAnswer}
+            loading={loading}
+        />
+
+
         <div className="w-full h-[400px] md:w-96 flex flex-col items-center justify-center border p-4 bg-gray-50 rounded-md">
             {isWebCam ? (
                 <Webcam
