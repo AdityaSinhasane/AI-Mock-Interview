@@ -25,7 +25,6 @@ interface AIResponse {
 const RecordAnswer = ({question, isWebCam, setIsWebCam}: RecordAnswerProps) => {
 
     const{
-        error,
         interimResult,
         isRecording,
         results,

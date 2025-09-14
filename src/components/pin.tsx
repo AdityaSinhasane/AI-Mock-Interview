@@ -1,15 +1,10 @@
 import type { Interview } from "@/types";
-import { useAuth } from "@clerk/clerk-react";
-import { useState } from "react";
 import { useNavigate } from "react-router";
 
 import {
   Card,
-  CardAction,
-  CardContent,
   CardDescription,
   CardFooter,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "./ui/badge";
@@ -24,8 +19,6 @@ interface InterviewPinProps{
 const InterviewPin = ({interview, onMockPage=false}: InterviewPinProps) => {
 
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const { userId } = useAuth();
 
 
 
