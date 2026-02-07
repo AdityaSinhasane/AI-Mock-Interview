@@ -47,19 +47,20 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+
 /* -------------------- COMPONENT -------------------- */
 
 const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
   const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      position: "",
-      description: "",
-      experience: 0,
-      techStack: "",
-      ...initialData,
-    },
-  });
+  resolver: zodResolver(formSchema),
+  defaultValues: {
+    position: "",
+    description: "",
+    experience: 0,
+    techStack: "",
+    ...initialData,
+  },
+});
 
   const { isValid, isSubmitting } = form.formState;
   const [loading, setLoading] = useState(false);
