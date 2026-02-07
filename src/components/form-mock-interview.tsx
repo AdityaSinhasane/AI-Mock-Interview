@@ -51,7 +51,7 @@ const formSchema = z.object({
   description: z.string().min(10, "Description is required"),
   experience: z.preprocess(
     (val) => Number(val),
-    z.number().min(0, "Experience cannot be negative")
+    z.number().min(0, "Experience cannot be negative"),
   ),
   techStack: z.string().min(1, "Tech stack is required"),
 });
@@ -240,7 +240,7 @@ Return ONLY the JSON array.
                   <Input
                     type="number"
                     disabled={loading}
-                    value={field.value ?? ""}
+                    value={typeof field.value === "number" ? field.value : ""}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     name={field.name}
@@ -270,7 +270,10 @@ Return ONLY the JSON array.
             <Button type="reset" variant="outline">
               Reset
             </Button>
-            <Button type="submit" disabled={!isValid || loading || isSubmitting}>
+            <Button
+              type="submit"
+              disabled={!isValid || loading || isSubmitting}
+            >
               {loading ? <Loader className="animate-spin" /> : "Submit"}
             </Button>
           </div>
