@@ -39,12 +39,9 @@ interface FormMockInterviewProps {
 }
 
 const formSchema = z.object({
-  position: z
-    .string()
-    .min(1, "Position is required")
-    .max(100, "Position must be 100 characters or less"),
+  position: z.string().min(1, "Position is required"),
   description: z.string().min(10, "Description is required"),
-  experience: z.coerce.number().min(0, "Experience cannot be negative"),
+  experience: z.number().min(0, "Experience cannot be negative"),
   techStack: z.string().min(1, "Tech stack is required"),
 });
 
@@ -53,7 +50,7 @@ type FormData = z.infer<typeof formSchema>;
 /* -------------------- COMPONENT -------------------- */
 
 const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
-  const form = useForm<FormData>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       position: "",
@@ -276,7 +273,12 @@ Return ONLY the JSON array.
               <FormItem>
                 <FormLabel>Years of Experience</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} disabled={loading} />
+                  <Input
+                    type="number"
+                    disabled={loading}
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -302,7 +304,10 @@ Return ONLY the JSON array.
             <Button type="reset" variant="outline" disabled={loading}>
               Reset
             </Button>
-            <Button type="submit" disabled={!isValid || loading || isSubmitting}>
+            <Button
+              type="submit"
+              disabled={!isValid || loading || isSubmitting}
+            >
               {loading ? <Loader className="animate-spin" /> : actions}
             </Button>
           </div>
