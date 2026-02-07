@@ -236,7 +236,7 @@ Return ONLY the JSON array.
           className="w-full p-8 rounded-lg flex flex-col gap-6 shadow-md"
         >
           {/* Position */}
-          <FormField
+          <FormField<FormData>
             control={form.control}
             name="position"
             render={({ field }) => (
@@ -251,7 +251,7 @@ Return ONLY the JSON array.
           />
 
           {/* Description */}
-          <FormField
+          <FormField<FormData>
             control={form.control}
             name="description"
             render={({ field }) => (
@@ -266,7 +266,7 @@ Return ONLY the JSON array.
           />
 
           {/* Experience */}
-          <FormField
+          <FormField<FormData>
             control={form.control}
             name="experience"
             render={({ field }) => (
@@ -286,7 +286,7 @@ Return ONLY the JSON array.
           />
 
           {/* Tech Stack */}
-          <FormField
+          <FormField<FormData>
             control={form.control}
             name="techStack"
             render={({ field }) => (
