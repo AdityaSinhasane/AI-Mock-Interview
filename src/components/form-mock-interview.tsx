@@ -34,7 +34,7 @@ import {
   FormMessage,
 } from "./ui/form";
 
-/* -------------------- TYPES -------------------- */
+/* -------------------- PROPS -------------------- */
 interface FormMockInterviewProps {
   initialData: Interview | null;
 }
@@ -43,8 +43,8 @@ interface FormMockInterviewProps {
 /**
  * IMPORTANT:
  * - HTML number inputs return strings
- * - z.preprocess safely converts string -> number
- * - This avoids `unknown` in strict builds
+ * - z.preprocess safely converts string → number
+ * - Prevents `unknown` in strict builds
  */
 const formSchema = z.object({
   position: z.string().min(1, "Position is required"),
@@ -113,11 +113,11 @@ Return ONLY the JSON array.
 
       return JSON.parse(match[0]);
     } catch {
-      // Fallback so app NEVER crashes
+      // Fallback so app never crashes
       return [
         {
           question: `What is ${data.techStack}?`,
-          answer: `${data.techStack} is commonly used in modern applications.`,
+          answer: `${data.techStack} is widely used in modern applications.`,
         },
       ];
     }
@@ -229,6 +229,7 @@ Return ONLY the JSON array.
             )}
           />
 
+          {/* 🔴 IMPORTANT FIX: controlled number input */}
           <FormField
             control={form.control}
             name="experience"
@@ -236,7 +237,15 @@ Return ONLY the JSON array.
               <FormItem>
                 <FormLabel>Experience (Years)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} disabled={loading} />
+                  <Input
+                    type="number"
+                    disabled={loading}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
