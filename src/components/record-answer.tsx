@@ -6,10 +6,10 @@ import { useParams } from "react-router";
 import Webcam from "react-webcam";
 import { TooltipButton } from "./tooltip-button";
 import { toast } from "sonner";
-import { chatSession } from "@/scripts";
 import { SaveModal } from "./save-model";
 import { addDoc, collection, getDocs, query, serverTimestamp, where } from "firebase/firestore";
 import { db } from "@/config/firebase.config";
+import { chatSession } from "@/scripts";
 
 interface RecordAnswerProps {
   question: { question: string; answer: string };
