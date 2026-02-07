@@ -67,6 +67,7 @@ const Dashboard = () => {
         <InterviewPin key={interview.id} interview={interview}/>
       ) 
       :(
+        
           <div className="md:col-span-3 w-full flex flex-grow items-center justify-center h-96 flex-col">
             <img
               src="/assets/svg/not-found.svg"
@@ -89,6 +90,7 @@ const Dashboard = () => {
                 Add New
               </Button>
             </Link>
+
           </div>
         )}
     </div>

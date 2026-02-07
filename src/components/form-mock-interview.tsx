@@ -30,7 +30,7 @@ interface FormMockInterviewProps {
 }
 
 const formSchema = z.object({
-  position: z
+  position: z 
     .string()
     .min(1, "Position is required")
     .max(100, "Position must be 100 characters or less"),

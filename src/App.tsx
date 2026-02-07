@@ -19,8 +19,11 @@ import Feedback from "@/routes/feedback"
 function App() {
 
   return (
+    <>
    <Router>
     <Routes>
+
+      
       {/* public Routes */}
       <Route element={<PublicLayout/>}>
         <Route index element={<HomePage/>} />
@@ -44,10 +47,12 @@ function App() {
           <Route path="interview/:interviewId/start" element={<MockInterviewPage/>}/>
           <Route path="feedback/:interviewId" element={<Feedback/>}/>
         </Route>
-        
       </Route>
+
+    
     </Routes>
    </Router>
+   </>
   )
 }
 

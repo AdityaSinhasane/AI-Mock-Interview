@@ -48,12 +48,12 @@ const RecordAnswer = ({question, isWebCam, setIsWebCam}: RecordAnswerProps) => {
         if (isRecording) {
             stopSpeechToText();
 
-            if (userAnswer?.length < 30) {
+            if (userAnswer?.length < 15) {
                 toast.error("Error", {
-                description: "Your answer should be more than 30 characters",
+                description: "Your answer should be more than 15 characters",
                 });
 
-                return;
+                return; 
             }
 
             //   ai result
