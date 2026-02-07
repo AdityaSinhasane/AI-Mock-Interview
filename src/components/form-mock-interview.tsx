@@ -21,8 +21,14 @@ import {
 } from "./ui/form";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
-import { chatSession } from "@/scripts";
-import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+//import { chatSession } from "@/scripts";
+import {
+  addDoc,
+  collection,
+  doc,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/config/firebase.config";
 
 interface FormMockInterviewProps {
@@ -30,7 +36,7 @@ interface FormMockInterviewProps {
 }
 
 const formSchema = z.object({
-  position: z 
+  position: z
     .string()
     .min(1, "Position is required")
     .max(100, "Position must be 100 characters or less"),
@@ -72,81 +78,83 @@ const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
     ? { title: "Updated..!", description: "Changes saved successfully..." }
     : { title: "Created..!", description: "New Mock Interview created..." };
 
+  // const cleanAiResponse = (responseText: string) =>{
+  //   // step 1 :: Trim any surrounding whitespaces
+  //   let cleanText = responseText.trim();
 
-  const cleanAiResponse = (responseText: string) =>{
-    // step 1 :: Trim any surrounding whitespaces
-    let cleanText = responseText.trim();
+  //   // step 2 :: remove any occurence of "json" or code block symbol (```or`)
+  //   cleanText = cleanText.replace(/(json|```|`)/g, "");
 
-    // step 2 :: remove any occurence of "json" or code block symbol (```or`)
-    cleanText = cleanText.replace(/(json|```|`)/g, "");
+  //   //step 3 :: Extract a JOSN array by capturing text between square brackets
+  //   const jsonArrayMatch = cleanText.match(/\[.*\]/s);
 
-    //step 3 :: Extract a JOSN array by capturing text between square brackets
-    const jsonArrayMatch = cleanText.match(/\[.*\]/s);
+  //   if(jsonArrayMatch){
+  //     cleanText = jsonArrayMatch[0];
+  //   }else
+  //   {
+  //     throw new Error("No JSON array found in response");
+  //   }
 
-    if(jsonArrayMatch){
-      cleanText = jsonArrayMatch[0];
-    }else
-    {
-      throw new Error("No JSON array found in response");
-    }
+  //   // step 4 :: Parse the clean JSON text into an array of objects
+  //   try {
+  //     return JSON.parse(cleanText);
+  //   } catch (error) {
+  //     throw new Error("Invalid JSON format: " + (error as Error)?.message )
+  //   }
+  // }
 
-    // step 4 :: Parse the clean JSON text into an array of objects
-    try {
-      return JSON.parse(cleanText);
-    } catch (error) {
-      throw new Error("Invalid JSON format: " + (error as Error)?.message )
-    }
-  }
+  // const generateAiResponse = async (data: FormData) =>{
+  //   const prompt = `
+  //     As an experienced prompt engineer, generate a JSON array containing 5 technical interview questions along with detailed answers based on the following job information. Each object in the array should have the fields "question" and "answer", formatted as follows:
 
+  //     [
+  //       { "question": "<Question text>", "answer": "<Answer text>" },
+  //       ...
+  //     ]
 
-  const generateAiResponse = async (data: FormData) =>{
-    const prompt = `
-      As an experienced prompt engineer, generate a JSON array containing 5 technical interview questions along with detailed answers based on the following job information. Each object in the array should have the fields "question" and "answer", formatted as follows:
+  //     Job Information:
+  //     - Job Position: ${data?.position}
+  //     - Job Description: ${data?.description}
+  //     - Years of Experience Required: ${data?.experience}
+  //     - Tech Stacks: ${data?.techStack}
 
-      [
-        { "question": "<Question text>", "answer": "<Answer text>" },
-        ...
-      ]
+  //     The questions should assess skills in ${data?.techStack} development and best practices, problem-solving, and experience handling complex requirements. Please format the output strictly as an array of JSON objects without any additional labels, code blocks, or explanations. Return only the JSON array with questions and answers.
+  //     `;
 
-      Job Information:
-      - Job Position: ${data?.position}
-      - Job Description: ${data?.description}
-      - Years of Experience Required: ${data?.experience}
-      - Tech Stacks: ${data?.techStack}
+  //   const aiResults = await chatSession.sendMessage(prompt);
+  //   const cleanedResponse = cleanAiResponse(aiResults.response.text());
 
-      The questions should assess skills in ${data?.techStack} development and best practices, problem-solving, and experience handling complex requirements. Please format the output strictly as an array of JSON objects without any additional labels, code blocks, or explanations. Return only the JSON array with questions and answers.
-      `;
-    
-    const aiResults = await chatSession.sendMessage(prompt);
-    const cleanedResponse = cleanAiResponse(aiResults.response.text());
+  //   return cleanedResponse;
 
-    return cleanedResponse;
-
-    
-  }
+  // }
+  const generateAiResponse = async () => {
+    return [
+      {
+        question: "Temporary question",
+        answer: "Temporary answer",
+      },
+    ];
+  };
 
   const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
-      
-      if(initialData){
+
+      if (initialData) {
         //update
-        if(isValid){
-          const aiResult = await generateAiResponse(data);
-          await updateDoc(doc(db, "interviews", initialData?.id),{
+        if (isValid) {
+          const aiResult = await generateAiResponse();
+          await updateDoc(doc(db, "interviews", initialData?.id), {
             questions: aiResult,
             ...data,
-            updatedAt: serverTimestamp()
+            updatedAt: serverTimestamp(),
           });
 
-          toast(toastMessage.title, {description: toastMessage.description})
-
+          toast(toastMessage.title, { description: toastMessage.description });
         }
-
-      }else{
-
+      } else {
         // create a new mock interview
-        if(isValid){
+        if (isValid) {
           const aiResult = await generateAiResponse(data);
 
           await addDoc(collection(db, "interviews"), {
@@ -154,21 +162,16 @@ const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
             userId,
             questions: aiResult,
             createdAt: serverTimestamp(),
-
           });
 
-          toast(toastMessage.title, {description: toastMessage.description})
-
+          toast(toastMessage.title, { description: toastMessage.description });
         }
       }
 
-      navigate("/generate", { replace: true});
-
-    } catch (error) {
-      console.log(error);
-      toast.error("Error..", {
-        description: `Something went wrong. Please try again later`,
-      });
+      navigate("/generate", { replace: true });
+    } catch (error: any) {
+      console.error("ACTUAL ERROR:", error);
+      alert(error?.message || "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -323,7 +326,7 @@ const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
               ) : (
                 actions
               )}
-            </Button> 
+            </Button>
           </div>
         </form>
       </FormProvider>
