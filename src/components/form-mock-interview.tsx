@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@clerk/clerk-react";
@@ -22,108 +22,81 @@ import CustomBreadCrumb from "./custom-bread-crumb";
 import { Headings } from "./headings";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "./ui/form";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
 
-/* -------------------- PROPS -------------------- */
-interface FormMockInterviewProps {
-  initialData: Interview | null;
-}
+/* ---------------- SCHEMA ---------------- */
 
-/* -------------------- ZOD SCHEMA -------------------- */
-/**
- * IMPORTANT:
- * - HTML number inputs return strings
- * - z.preprocess safely converts string → number
- * - Prevents `unknown` in strict builds
- */
 const formSchema = z.object({
-  position: z.string().min(1, "Position is required"),
-  description: z.string().min(10, "Description is required"),
-  experience: z.preprocess(
-    (val) => Number(val),
-    z.number().min(0, "Experience cannot be negative"),
-  ),
-  techStack: z.string().min(1, "Tech stack is required"),
+  position: z.string().min(1),
+  description: z.string().min(10),
+  experience: z.number().min(0),
+  techStack: z.string().min(1),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
+interface Props {
+  initialData: Interview | null;
+}
+
+export default function FormMockInterview({ initialData }: Props) {
   const navigate = useNavigate();
   const { userId } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  /* -------------------- FORM -------------------- */
-  const form = useForm({
+  /* ---------------- FORM ---------------- */
+
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       position: "",
       description: "",
       experience: 0,
       techStack: "",
-      ...initialData,
     },
   });
 
-  const { isSubmitting, isValid } = form.formState;
+  /* ---------------- AI ---------------- */
 
-  /* -------------------- AI -------------------- */
   const generateAiResponse = async (data: FormData) => {
     try {
       const prompt = `
-You are an experienced technical interviewer.
+Generate exactly 5 interview questions with answers.
+Return ONLY a JSON array.
 
-Generate exactly 5 interview questions with detailed answers.
-
-STRICT RULES:
-- Output must be a valid JSON array
-- No markdown
-- No extra text
-- Each item must have "question" and "answer"
-
-FORMAT:
-[
-  { "question": "Question text", "answer": "Answer text" }
-]
-
-JOB DETAILS:
-Role: ${data.position}
+Job Role: ${data.position}
 Description: ${data.description}
-Experience: ${data.experience} years
+Experience: ${data.experience}
 Tech Stack: ${data.techStack}
-
-Return ONLY the JSON array.
 `;
 
-      const result = await chatSession.sendMessage(prompt);
-      const text = result.response.text();
+      const res = await chatSession.sendMessage(prompt);
+      const text = res.response.text();
 
       const match = text.match(/\[[\s\S]*\]/);
       if (!match) throw new Error("Invalid AI response");
 
       return JSON.parse(match[0]);
     } catch {
-      // Fallback so app never crashes
       return [
         {
-          question: `What is ${data.techStack}?`,
-          answer: `${data.techStack} is widely used in modern applications.`,
+          question: `Explain ${data.techStack}`,
+          answer: `${data.techStack} is widely used in development.`,
         },
       ];
     }
   };
 
-  /* -------------------- SUBMIT -------------------- */
+  /* ---------------- SUBMIT ---------------- */
+
   const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
@@ -135,33 +108,28 @@ Return ONLY the JSON array.
           questions,
           updatedAt: serverTimestamp(),
         });
-
-        toast("Updated!", {
-          description: "Mock interview updated successfully.",
-        });
+        toast("Updated successfully");
       } else {
         await addDoc(collection(db, "interviews"), {
           ...data,
-          userId,
           questions,
+          userId,
           createdAt: serverTimestamp(),
         });
-
-        toast("Created!", {
-          description: "Mock interview created successfully.",
-        });
+        toast("Created successfully");
       }
 
       navigate("/generate", { replace: true });
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      console.error(e);
       toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
-  /* -------------------- RESET ON EDIT -------------------- */
+  /* ---------------- EFFECT ---------------- */
+
   useEffect(() => {
     if (initialData) {
       form.reset({
@@ -173,15 +141,16 @@ Return ONLY the JSON array.
     }
   }, [initialData, form]);
 
-  /* -------------------- UI -------------------- */
+  /* ---------------- UI ---------------- */
+
   return (
-    <div className="w-full flex-col space-y-4">
+    <div className="space-y-4">
       <CustomBreadCrumb
         breadCrumbPage={initialData ? initialData.position : "Create"}
         breadCrumpItems={[{ label: "Mock Interviews", link: "/generate" }]}
       />
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <Headings
           title={initialData ? initialData.position : "Create Mock Interview"}
           isSubHeading
@@ -195,18 +164,17 @@ Return ONLY the JSON array.
 
       <Separator />
 
-      {/* ✅ SHADCN FORM */}
-      <Form {...form}>
+      <FormProvider {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="p-8 flex flex-col gap-6 shadow-md rounded-lg"
+          className="space-y-6 p-6 shadow rounded"
         >
           <FormField
-            control={form.control}
             name="position"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Job Position</FormLabel>
+                <FormLabel>Position</FormLabel>
                 <FormControl>
                   <Input {...field} disabled={loading} />
                 </FormControl>
@@ -216,8 +184,8 @@ Return ONLY the JSON array.
           />
 
           <FormField
-            control={form.control}
             name="description"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Description</FormLabel>
@@ -229,22 +197,18 @@ Return ONLY the JSON array.
             )}
           />
 
-          {/* 🔴 IMPORTANT FIX: controlled number input */}
           <FormField
-            control={form.control}
             name="experience"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Experience (Years)</FormLabel>
+                <FormLabel>Experience (years)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     disabled={loading}
-                    value={typeof field.value === "number" ? field.value : ""}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
+                    value={field.value}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />
@@ -253,8 +217,8 @@ Return ONLY the JSON array.
           />
 
           <FormField
-            control={form.control}
             name="techStack"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tech Stack</FormLabel>
@@ -266,21 +230,11 @@ Return ONLY the JSON array.
             )}
           />
 
-          <div className="flex justify-end gap-4">
-            <Button type="reset" variant="outline">
-              Reset
-            </Button>
-            <Button
-              type="submit"
-              disabled={!isValid || loading || isSubmitting}
-            >
-              {loading ? <Loader className="animate-spin" /> : "Submit"}
-            </Button>
-          </div>
+          <Button type="submit" disabled={loading}>
+            {loading ? <Loader className="animate-spin" /> : "Submit"}
+          </Button>
         </form>
-      </Form>
+      </FormProvider>
     </div>
   );
-};
-
-export default FormMockInterview;
+}
