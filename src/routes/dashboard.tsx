@@ -1,3 +1,17 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router";
+import { useAuth } from "@clerk/clerk-react";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
+import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
 import { Headings } from "@/components/headings";
 import InterviewPin from "@/components/pin";
 import { Button } from "@/components/ui/button";
@@ -5,12 +19,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/config/firebase.config";
 import type { Interview } from "@/types";
-import { useAuth } from "@clerk/clerk-react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Link } from "react-router";
-import { toast } from "sonner";
+
+
 
 const Dashboard = () => {
 
