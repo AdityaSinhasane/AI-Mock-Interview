@@ -6,10 +6,8 @@ import {
   onSnapshot,
   query,
   where,
-  deleteDoc,
-  doc,
 } from "firebase/firestore";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Headings } from "@/components/headings";
@@ -20,91 +18,93 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/config/firebase.config";
 import type { Interview } from "@/types";
 
-
-
 const Dashboard = () => {
-
-  const [Interviews, setInterviews] = useState<Interview[]>([]);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(false);
   const { userId } = useAuth();
 
-  useEffect(()=>{
+  useEffect(() => {
+    if (!userId) return;
+
     setLoading(true);
-    const interviewQuery = query(collection(db, "interviews"), where("userId", "==", userId));
 
-    const unsubscribe = onSnapshot(interviewQuery, (snapshot)=>{
-      const interviewList : Interview[] = snapshot.docs.map( doc =>{
-        const id = doc.id
-        return {
-          id,
-          ...doc.data()
-        }
-      }) as Interview[]
-      setInterviews(interviewList)
-      setLoading(false);
-    }, (error) =>{
-        console.log("Error on fetching : ", error);
-        toast.error("Error..", {
-          description: "SOmething went wrong.. Try again later..",
-        });
+    const interviewQuery = query(
+      collection(db, "interviews"),
+      where("userId", "==", userId)
+    );
+
+    const unsubscribe = onSnapshot(
+      interviewQuery,
+      (snapshot) => {
+        const interviewList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Interview[];
+
+        setInterviews(interviewList);
         setLoading(false);
-    })
+      },
+      (error) => {
+        console.error("Fetch error:", error);
+        toast.error("Something went wrong. Try again later.");
+        setLoading(false);
+      }
+    );
 
-    return () => unsubscribe()
+    return () => unsubscribe();
+  }, [userId]);
 
-  },[userId]);
-  
+  return (
+    <>
+      <div className="flex w-full items-center justify-between">
+        <Headings
+          title="Dashboard"
+          description="Create and start your AI Mock Interview"
+        />
+        <Link to="/generate/create">
+          <Button size="sm">
+            <Plus className="mr-1" />
+            Add New
+          </Button>
+        </Link>
+      </div>
 
-  return <>
-    <div className="flex w-full items-center justify-between">
-      {/* headings */}
-      <Headings title="Dashboard" description="Create and start your AI Mock Interview"/>
-      <Link to={"/generate/create"}>
-        <Button size={"sm"}>
-          <Plus/> Add New
-        </Button>
-      </Link>
-    </div>
+      <Separator className="my-8" />
 
-    <Separator className="my-8"/>
-
-    {/* content section */}
-    <div className="md:grid md:grid-cols-3 gap-3 py-4">
-      { loading ? Array.from({length: 6}).map((_, index)=>(
-        <Skeleton key={index} className="h-24 md:h-32 rounded-md"/>
-      )) 
-      : Interviews.length > 0 ? Interviews.map(interview => 
-        <InterviewPin key={interview.id} interview={interview}/>
-      ) 
-      :(
-        
-          <div className="md:col-span-3 w-full flex flex-grow items-center justify-center h-96 flex-col">
+      <div className="md:grid md:grid-cols-3 gap-3 py-4">
+        {loading ? (
+          Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 md:h-32 rounded-md" />
+          ))
+        ) : interviews.length > 0 ? (
+          interviews.map((interview) => (
+            <InterviewPin key={interview.id} interview={interview} />
+          ))
+        ) : (
+          <div className="md:col-span-3 w-full flex flex-col items-center justify-center h-96">
             <img
               src="/assets/svg/not-found.svg"
               className="w-44 h-44 object-contain"
-              alt=""
+              alt="No data"
             />
-
             <h2 className="text-lg font-semibold text-muted-foreground">
               No Data Found
             </h2>
-
-            <p className="w-full md:w-96 text-center text-sm text-neutral-400 mt-4">
+            <p className="text-sm text-neutral-400 mt-4 text-center max-w-md">
               There is no available data to show. Please add some new mock
-              interviews
+              interviews.
             </p>
-
-            <Link to={"/generate/create"} className="mt-4">
-              <Button size={"sm"}>
-                <Plus className="min-w-5 min-h-5 mr-1" />
+            <Link to="/generate/create" className="mt-4">
+              <Button size="sm">
+                <Plus className="mr-1" />
                 Add New
               </Button>
             </Link>
-
           </div>
         )}
-    </div>
-  </>
-}
+      </div>
+    </>
+  );
+};
 
 export default Dashboard;
