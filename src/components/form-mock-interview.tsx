@@ -16,7 +16,7 @@ import {
 
 import type { Interview } from "@/types";
 import { db } from "@/config/firebase.config";
-import { chatSession } from "@/scripts";
+import { generateWithGemini } from "@/scripts";
 
 import CustomBreadCrumb from "./custom-bread-crumb";
 import { Headings } from "./headings";
@@ -66,11 +66,28 @@ export default function FormMockInterview({ initialData }: Props) {
 
   /* ---------------- AI ---------------- */
 
-  const generateAiResponse = async (data: FormData) => {
-    try {
-      const prompt = `
-Generate exactly 5 interview questions with answers.
-Return ONLY a JSON array.
+const generateAiResponse = async (data: FormData) => {
+  try {
+    const prompt = `
+Generate 5 DIFFERENT interview questions with answers.
+
+STRICT FORMAT:
+1. Question: <text>
+   Answer: <text>
+2. Question: <text>
+   Answer: <text>
+3. Question: <text>
+   Answer: <text>
+4. Question: <text>
+   Answer: <text>
+5. Question: <text>
+   Answer: <text>
+
+Rules:
+- Exactly 5
+- No JSON
+- No markdown
+- No extra text
 
 Job Role: ${data.position}
 Description: ${data.description}
@@ -78,22 +95,52 @@ Experience: ${data.experience}
 Tech Stack: ${data.techStack}
 `;
 
-      const res = await chatSession.sendMessage(prompt);
-      const text = res.response.text();
+    const text = await generateWithGemini(prompt);
 
-      const match = text.match(/\[[\s\S]*\]/);
-      if (!match) throw new Error("Invalid AI response");
+    console.log("RAW AI OUTPUT >>>", text);
 
-      return JSON.parse(match[0]);
-    } catch {
-      return [
-        {
-          question: `Explain ${data.techStack}`,
-          answer: `${data.techStack} is widely used in development.`,
-        },
-      ];
+    const blocks = text.split(/\n\d+\.\s/).filter(Boolean);
+
+    if (blocks.length < 5) {
+      throw new Error("Less than 5 questions returned");
     }
-  };
+
+    return blocks.slice(0, 5).map((block) => {
+      const q = block.match(/Question:\s*(.*)/i);
+      const a = block.match(/Answer:\s*(.*)/i);
+
+      return {
+        question: q?.[1]?.trim() || "Question missing",
+        answer: a?.[1]?.trim() || "Answer missing",
+      };
+    });
+  } catch (error) {
+    console.error("AI generation failed ❌", error);
+
+    return [
+      {
+        question: `Explain ${data.techStack}`,
+        answer: `${data.techStack} is used in real-world development.`,
+      },
+      {
+        question: `What are use cases of ${data.techStack}?`,
+        answer: `It is used in multiple applications.`,
+      },
+      {
+        question: `What challenges exist in ${data.techStack}?`,
+        answer: `Challenges include scalability and performance.`,
+      },
+      {
+        question: `How do you optimize ${data.techStack}?`,
+        answer: `Using best practices and tools.`,
+      },
+      {
+        question: `Why learn ${data.techStack}?`,
+        answer: `It improves career opportunities.`,
+      },
+    ];
+  }
+};
 
   /* ---------------- SUBMIT ---------------- */
 
